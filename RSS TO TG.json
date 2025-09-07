@@ -1,0 +1,255 @@
+{
+  "name": "RSS TO TG",
+  "nodes": [
+    {
+      "parameters": {
+        "interval": 10,
+        "unit": "hours"
+      },
+      "name": "Interval",
+      "type": "n8n-nodes-base.interval",
+      "typeVersion": 1,
+      "position": [
+        64,
+        -176
+      ],
+      "id": "677e4e5a-fc0b-4879-bb2c-c76adf0a3f29"
+    },
+    {
+      "parameters": {
+        "chatId": "-1002539478521",
+        "text": "=📝{{$json[\"title\"]}} #blog \n\n{{$json[\"link\"]}}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "name": "Send a text message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1184,
+        -160
+      ],
+      "id": "eae6775a-614e-40d6-a8b8-a0c5d6db0f2e",
+      "webhookId": "4a6e484a-4e26-4855-bc7e-98937ca824e7",
+      "credentials": {
+        "telegramApi": {
+          "id": "ybREdfyCP1VmuHCL",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.feedUrl }}",
+        "options": {
+          "customFields": ""
+        }
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        384,
+        -32
+      ],
+      "id": "ce0c40e7-330b-4f7c-aa6c-6bbdd5565cd7",
+      "name": "RSS Read",
+      "executeOnce": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const myRssFeeds = [\n { name: \"douchi\", url: \"https://rss.app/feeds/hZVUbnIx3yBAbKMU.xml\" },\n  { name: \"yukieyun\", url: \"https://yukieyun.net/index.xml\" },\n  { name: \"thirdshire\", url: \"https://thirdshire.com/index.xml\" },\n  { name: \"yitaoli\", url: \"https://yitaoli2023.github.io/yitaoli/index.xml\" },\n  { name: \"bamboobone9\", url: \"https://bamboobone9.com/index.xml\" },\n  { name: \"pursuitus\", url: \"https://blog.pursuitus.com/feed\" },\n  { name: \"wraith615\", url: \"https://blog.wraith615.xyz/rss.xml\" },\n  /*{ name: \"ignativssss\", url: \"https://ignativssss.github.io//index.xml\" },\n  { name: \"asyncx\", url: \"https://blog.asyncx.top/zh.xml\" },\n  { name: \"birds\", url: \"https://moresci.sale/@birds.rss\" },\n  { name: \"shyrz\", url: \"https://shyrz.me/rss/\" },\n  { name: \"douchiBook\", url: \"https://bamboobone9.com/index.xml\" },\n  { name: \"ruanyifeng\", url: \"https://feeds.feedburner.com/ruanyifeng\" },\n  { name: \"decohack\", url: \"https://decohack.com/feed/\" }*/\n \n];\n\n\nreturn myRssFeeds.map(feed => ({\n  json: {\n    feedName: feed.name,\n    feedUrl: feed.url\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        -176
+      ],
+      "id": "1cca6099-64dd-44dc-aab6-93f57ea67782",
+      "name": "list"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "69359453-ca25-44b1-b38a-9e21aaf821ca",
+              "name": "feedName",
+              "value": "={{ $('list').item.json.feedName }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        656,
+        -32
+      ],
+      "id": "d17c3825-86e0-455a-84fb-a58e429a2266",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "removeItemsSeenInPreviousExecutions",
+        "dedupeValue": "={{ $json.guid || $json.link }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        -48
+      ],
+      "id": "a5b7c520-7dec-4211-a05f-0bf0a4e22112",
+      "name": "Remove Duplicates"
+    },
+    {
+      "parameters": {},
+      "id": "19b26be2-e0c7-4c18-841a-78181d0e42d4",
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [
+        64,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst latestByFeed = {}; // 用对象保存每个源的最新文章\n\nfor (const item of items) {\n  const feed = item.json.feedName || 'unknown';\n  const pubDate = item.json.pubDate ? new Date(item.json.pubDate).getTime() : 0;\n\n  if (!latestByFeed[feed]) {\n    latestByFeed[feed] = item;\n  } else {\n    const existingDate = latestByFeed[feed].json.pubDate ? new Date(latestByFeed[feed].json.pubDate).getTime() : 0;\n    if (pubDate > existingDate) {\n      latestByFeed[feed] = item;\n    }\n  }\n}\n\n// 把对象里的结果转成数组返回\nreturn Object.values(latestByFeed);\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        -160
+      ],
+      "id": "b4de649c-7679-4360-8c51-ef4be98a48b1",
+      "name": "check",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\n// 按日期降序排列\nitems.sort((a, b) => {\n  const dateA = new Date(a.json.pubDate || 0).getTime();\n  const dateB = new Date(b.json.pubDate || 0).getTime();\n  return dateB - dateA;\n});\n\n\nreturn items.slice(0, 35);\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        -176
+      ],
+      "id": "74cab167-0280-4dbe-b333-f349960900d4",
+      "name": "cut"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Interval": {
+      "main": [
+        [
+          {
+            "node": "list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Read": {
+      "main": [
+        [
+          {
+            "node": "cut",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "list": {
+      "main": [
+        [
+          {
+            "node": "RSS Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicates": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "check": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "cut": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "FcbdW9E8cGs0jMdV"
+  },
+  "versionId": "dfe8423c-aa7e-44fa-828b-76f3d7e8141b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "66e3945e387b967297c879f5c5771223ee11f8c4960cd16f538eeef47f6ad36e"
+  },
+  "id": "KI9T5uyx4XCh0TJe",
+  "tags": []
+}

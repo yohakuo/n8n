@@ -1,0 +1,148 @@
+{
+  "name": "YOUTUBU_0",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "74cfba75-cb33-4e8d-a277-a6ba30fe3744",
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [
+        32,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "playlistItem",
+        "operation": "getAll",
+        "playlistId": "=LL",
+        "limit": 10,
+        "options": {}
+      },
+      "name": "YouTube",
+      "type": "n8n-nodes-base.youTube",
+      "typeVersion": 1,
+      "position": [
+        256,
+        144
+      ],
+      "id": "2ffbfbc4-f3d6-49d4-8ee6-2b25277e0f9e",
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "id": "g3Jlx0ZpN3nAz7mF",
+          "name": "YouTube account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "const staticData = getWorkflowStaticData('global');\nconst lastItemId = staticData.lastItemId;\n\nconsole.log('lastItemId', lastItemId);\nconst firstItem = items[0];\nlet newItems = [];\n\nfunction getId(item) {\n  return item.json.contentDetails.videoId;\n}\n\nif (lastItemId) {\n  for (const item of items) {\n    if (getId(item) === lastItemId) {\n      break;\n    }\n    newItems.push(item)\n  }\n} else {\n  newItems = [firstItem]\n}\n\nstaticData.lastItemId = getId(firstItem)\nreturn newItems.reverse()"
+      },
+      "name": "Function",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        464,
+        144
+      ],
+      "id": "18757a8a-4735-4e84-a699-ecd3d1389b2b"
+    },
+    {
+      "parameters": {
+        "interval": 10,
+        "unit": "minutes"
+      },
+      "name": "Interval",
+      "type": "n8n-nodes-base.interval",
+      "typeVersion": 1,
+      "position": [
+        32,
+        352
+      ],
+      "id": "935aac25-fb32-49ca-860e-5cee05ab5628"
+    },
+    {
+      "parameters": {
+        "chatId": "-1002539478521",
+        "text": "=▶️ {{$json[\"snippet\"][\"title\"]}} #youtube\n\nhttps://www.youtube.com/watch?v={{$json[\"contentDetails\"][\"videoId\"]}}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "name": "Send a text message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        656,
+        144
+      ],
+      "id": "560b1bdf-1608-4738-8502-e652457a6adb",
+      "webhookId": "a0829e96-b0f5-46bd-8fa7-b36fcb15f15b",
+      "credentials": {
+        "telegramApi": {
+          "id": "NCFJhuacTUK6VWAN",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "YouTube": {
+      "main": [
+        [
+          {
+            "node": "Function",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Interval": {
+      "main": [
+        [
+          {
+            "node": "YouTube",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "YouTube",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ee44e7b8-9cc4-41e3-9dfd-26d0685d34ae",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "490f85d3b17bba003a28f9037edcb3c19977481418e80f3ce7fdb571217d5a69"
+  },
+  "id": "yDpM7eKQffxpagRP",
+  "tags": []
+}

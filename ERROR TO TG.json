@@ -1,0 +1,88 @@
+{
+  "name": "ERROR TO TG",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "e9606428-d505-4799-bb6f-6aaec14f8d2d",
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        96
+      ]
+    },
+    {
+      "parameters": {},
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        256
+      ],
+      "id": "5f8926f7-fedc-480e-91b2-d0080196e4f8"
+    },
+    {
+      "parameters": {
+        "chatId": "-1002651162114",
+        "text": "=<b>n8n workflow error</b> #n8n #error\n<a href=\"{{$json[\"execution\"][\"url\"]}}\">{{$json[\"workflow\"][\"name\"]}}</a>\n\nError: <code>{{$json[\"execution\"][\"error\"][\"message\"]}}</code>\n\n<pre><code>{{$json[\"execution\"][\"error\"][\"stack\"]}}</code></pre>",
+        "additionalFields": {
+          "disable_web_page_preview": true,
+          "parse_mode": "HTML"
+        }
+      },
+      "name": "Send a text message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        48,
+        256
+      ],
+      "id": "214d4286-4002-43f5-83ae-136f2004caf1",
+      "webhookId": "46df4779-49a3-4f2c-8864-ed2c127811f7",
+      "credentials": {
+        "telegramApi": {
+          "id": "NCFJhuacTUK6VWAN",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "286f8326-93b7-47f2-b7c6-a7cdb67a7f86",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "490f85d3b17bba003a28f9037edcb3c19977481418e80f3ce7fdb571217d5a69"
+  },
+  "id": "cC0jc53gVkhrr7da",
+  "tags": []
+}

@@ -1,0 +1,192 @@
+{
+  "name": "Douban TO TG",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "7851c922-9324-4020-802c-e5e16bce039d",
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [
+        96,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.douban.com/feed/people/POWERLL66/interests",
+        "options": {}
+      },
+      "name": "RSS Feed Read",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [
+        320,
+        16
+      ],
+      "id": "2b6a747f-062b-4ea5-bd7a-e2afca101272",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "functionCode": "/* only return new items */\nconst staticData = getWorkflowStaticData('global');\nconst lastItemId = staticData.lastItemId;\n\nconsole.log('lastItemId', lastItemId);\nconst firstItem = items[0];\nlet newItems = [];\n\nfunction getId(item) {\n  return item.json.guid;\n}\n\nif (lastItemId) {\n  for (const item of items) {\n    if (getId(item) === lastItemId) {\n      break;\n    }\n    newItems.push(item)\n  }\n} else {\n  newItems = [firstItem]\n}\n\nstaticData.lastItemId = getId(firstItem)\nreturn newItems.reverse();"
+      },
+      "name": "Function",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        704,
+        48
+      ],
+      "id": "5b4ef7aa-83e4-43fc-b9ad-401475682f13"
+    },
+    {
+      "parameters": {
+        "interval": 12,
+        "unit": "hours"
+      },
+      "name": "Interval",
+      "type": "n8n-nodes-base.interval",
+      "typeVersion": 1,
+      "position": [
+        96,
+        176
+      ],
+      "id": "d7f0315f-3374-4ca1-a58b-f86f51532eca"
+    },
+    {
+      "parameters": {
+        "functionCode": "/* filter items */\nconst newItems = [];\n\nconst SYMBOL_MOVIE = '📺'\nconst SYMBOL_BOOK = '📖'\n\nconst tagInfoMap = {\n  watched: { re: /看过/, symbol: SYMBOL_MOVIE },\n  watching: { re: /在看/, symbol: SYMBOL_MOVIE },\n  read: { re: /读过/, symbol: SYMBOL_BOOK },\n  reading: { re: /在读/, symbol: SYMBOL_BOOK },\n}\n\nfor (const item of items) {\n  const title = item.json.title\n  let tag, symbol\n\n  for (const key in tagInfoMap) {\n    const tagInfo = tagInfoMap[key]\n    if (tagInfo.re.test(title)) {\n      tag = key\n      symbol = tagInfo.symbol\n      break\n    }\n  }\n\n  if (tag) {\n    item.json.tag = tag\n    item.json.tgTitle = `${symbol} ${title} #douban #${tag}`\n    newItems.push(item)\n  }\n}\n\nreturn newItems"
+      },
+      "name": "Function filter",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        496,
+        176
+      ],
+      "id": "b8320073-e8eb-4d07-86cc-c973943b3100"
+    },
+    {
+      "parameters": {
+        "chatId": "-1002539478521",
+        "text": "={{$json[\"tgTitle\"]}}\n\n{{$json[\"link\"]}}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "name": "Send a text message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1056,
+        48
+      ],
+      "id": "07102cd4-3709-4822-a19a-3fd9ef2cebb2",
+      "webhookId": "91c59452-5ff3-4c89-976e-e0fc447cafc5",
+      "credentials": {
+        "telegramApi": {
+          "id": "ybREdfyCP1VmuHCL",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "removeItemsSeenInPreviousExecutions",
+        "dedupeValue": "={{ $json.guid || $json.link }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        880,
+        208
+      ],
+      "id": "af5afa11-8d0a-4666-987b-26c769ed8a97",
+      "name": "Remove Duplicates"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "RSS Feed Read": {
+      "main": [
+        [
+          {
+            "node": "Function filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Interval": {
+      "main": [
+        [
+          {
+            "node": "RSS Feed Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function filter": {
+      "main": [
+        [
+          {
+            "node": "Function",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "RSS Feed Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicates": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "FcbdW9E8cGs0jMdV"
+  },
+  "versionId": "eb08b466-5100-4ad2-910d-89c779b18a2d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "66e3945e387b967297c879f5c5771223ee11f8c4960cd16f538eeef47f6ad36e"
+  },
+  "id": "HA6CsK4BUJV8BCzT",
+  "tags": []
+}
